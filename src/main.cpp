@@ -5,6 +5,7 @@
 #include <cstring>
 #include <ctime>
 #include <vector>
+#include <algorithm>
 
 using namespace std;
 
@@ -12,12 +13,13 @@ char direction = 'W';
 bool debugMode = false;
 int score = 0;
 int speed = 110;
-int snake_size = 1;
+int snakeSize = 3;
+int winSize = 700;
 
 bool check_border(SDL_Rect snake)
 {
-    if (snake.x < 0 || snake.x > 390 ||
-        snake.y < 0 || snake.y > 390)
+    if (snake.x < 0 || snake.x > winSize - 10 ||
+        snake.y < 0 || snake.y > winSize - 10)
     {
         return false;
     }
@@ -51,6 +53,27 @@ void loop_move(SDL_Rect snake, char direction)
     }
 }
 
+bool isSnakeInVectors(const vector<int> &snake_x, const vector<int> &snake_y)
+{
+    if (snake_x.empty() || snake_y.empty())
+    {
+        return false;
+    }
+
+    int head_x = snake_x.front();
+    int head_y = snake_y.front();
+
+    for (size_t i = 1; i < snake_x.size(); i++)
+    {
+        if (snake_x[i] == head_x && snake_y[i] == head_y)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 int main(int argc, char *args[])
 {
     srand(time(0));
@@ -60,8 +83,8 @@ int main(int argc, char *args[])
     SDL_Init(SDL_INIT_VIDEO);
     SDL_Window *myWindow = SDL_CreateWindow(
         "Cnake++",
-        400,
-        400,
+        winSize,
+        winSize,
         0);
     SDL_Surface *myWindowSurface = SDL_GetWindowSurface(myWindow);
     SDL_FillSurfaceRect(
@@ -94,6 +117,7 @@ int main(int argc, char *args[])
     int rand_y = (rand() % 40 + 1) * 10;
     apple.x = rand_x;
     apple.y = rand_y;
+
     SDL_FillSurfaceRect(
         myWindowSurface,
         &apple,
@@ -117,34 +141,39 @@ int main(int argc, char *args[])
                 break;
 
             case SDL_EVENT_KEY_DOWN:
-
-                if (debugMode)
-                {
-                    cout << "x: " << snake.x << "\n";
-                    cout << "y: " << snake.y << "\n";
-                }
-
                 switch (event.key.keysym.sym)
                 {
                 case SDLK_LEFT:
                 case SDLK_a:
                     printf("left\n");
-                    direction = 'A';
+                    if (direction != 'D')
+                    {
+                        direction = 'A';
+                    }
                     break;
                 case SDLK_RIGHT:
                 case SDLK_d:
                     printf("right\n");
-                    direction = 'D';
+                    if (direction != 'A')
+                    {
+                        direction = 'D';
+                    }
                     break;
                 case SDLK_DOWN:
                 case SDLK_s:
                     printf("down\n");
-                    direction = 'S';
+                    if (direction != 'W')
+                    {
+                        direction = 'S';
+                    }
                     break;
                 case SDLK_UP:
                 case SDLK_w:
                     printf("up\n");
-                    direction = 'W';
+                    if (direction != 'S')
+                    {
+                        direction = 'W';
+                    }
                     break;
 
                 default:
@@ -155,6 +184,21 @@ int main(int argc, char *args[])
             default:
                 break;
             }
+        }
+
+        if (snake.x == apple.x && snake.y == apple.y)
+        {
+            int rand_x = (rand() % 39) * 10;
+            int rand_y = (rand() % 39) * 10;
+            apple.x = rand_x;
+            apple.y = rand_y;
+            score += 10;
+            snakeSize++;
+
+            if (speed >= 50)
+                speed -= 3;
+
+            cout << score << endl;
         }
 
         if (direction == 'A')
@@ -174,7 +218,7 @@ int main(int argc, char *args[])
             snake.y += 10;
         }
 
-        if (!check_border(snake))
+        if (!check_border(snake) || isSnakeInVectors(snake_x, snake_y))
         {
             printf("end game\n");
             system("start https://yt3.googleusercontent.com/HWLGlrNtahx1qvGHMjLz_HQ1hlTGJjuUNRIeO49N3B8JwhqVu6SR7ap5mt1urs6xuKkcewDh=s900-c-k-c0x00ffffff-no-rj");
@@ -182,38 +226,11 @@ int main(int argc, char *args[])
         }
 
         snake_x.insert(snake_x.begin(), snake.x);
-        snake_x.resize(snake_size);
+        snake_x.resize(snakeSize);
         snake_y.insert(snake_y.begin(), snake.y);
-        snake_y.resize(snake_size);
-
-        for (int i = 0; i < snake_size; i++)
-        {
-            int savex = snake.x;
-            int savey = snake.y;
-            snake.x = snake_x[i];
-            snake.y = snake_y[i];
-            cout << "x: " << snake_x[i] << endl;
-            cout << "y: " << snake_y[i] << endl;
-            SDL_FillSurfaceRect(myWindowSurface, &snake, SDL_MapRGB(myWindowSurface->format, 79, 100, 66));
-            snake.x = savex;
-            snake.y = savey;
-        }
+        snake_y.resize(snakeSize);
 
         delay(speed);
-
-        if (snake.x == apple.x && snake.y == apple.y)
-        {
-            int rand_x = (rand() % 39) * 10;
-            int rand_y = (rand() % 39) * 10;
-            apple.x = rand_x;
-            apple.y = rand_y;
-            score += 10;
-            if (speed >= 50)
-                speed -= 3;
-            snake.h += 10;
-
-            cout << score << endl;
-        }
 
         SDL_FillSurfaceRect(
             myWindowSurface,
@@ -223,8 +240,19 @@ int main(int argc, char *args[])
                 20,
                 20,
                 20));
-        SDL_FillSurfaceRect(myWindowSurface, &snake, SDL_MapRGB(myWindowSurface->format, 79, 121, 66));
         SDL_FillSurfaceRect(myWindowSurface, &apple, SDL_MapRGB(myWindowSurface->format, 255, 83, 73));
+
+        for (int i = 0; i < snakeSize; i++)
+        {
+            int savex = snake.x;
+            int savey = snake.y;
+            snake.x = snake_x[i];
+            snake.y = snake_y[i];
+            SDL_FillSurfaceRect(myWindowSurface, &snake, SDL_MapRGB(myWindowSurface->format, 79, 100, 66));
+            snake.x = savex;
+            snake.y = savey;
+        }
+
         SDL_UpdateWindowSurface(myWindow);
     }
 

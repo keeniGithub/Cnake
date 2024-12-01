@@ -1,3 +1,3 @@
 @echo off
 
-g++ src/main.cpp -g -o D:\cpp\graphic\build\main_build.exe -lSDL3 -ID:\cpp\graphic\header -LD:\cpp\graphic\lib -ID:\cpp\graphic\include
+g++ src/main.cpp -g -o Z:\cpp\graphic\build\main_build.exe -lSDL3 -IZ:\cpp\graphic\header -LZ:\cpp\graphic\lib -IZ:\cpp\graphic\include
